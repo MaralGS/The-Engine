@@ -9,34 +9,23 @@
 
 struct App;
 
-namespace ModelLoader {
+namespace ModelLoader
+{
+    Image LoadImage(const char* filename);
 
-	struct VertexBufferAttribute {
-		u8 location;
-		u8 componentCount;
-		u8 offset;
-	};
+    void FreeImage(Image image);
 
-	struct VertexBufferLayout {
+    GLuint CreateTexture2DFromImage(Image image);
 
-		std::vector<VertexBufferAttribute> attributes;
-		u8 stride;
-	};
+    u32 LoadTexture2D(App* app, const char* filepath);
 
-	struct VertexShaderAttribute {
-		u8 location;
-		u8 componentCount;
-	};
+    void ProcessAssimpMesh(const aiScene* scene, aiMesh* mesh, Mesh* myMesh, u32 baseMeshMaterialIndex, std::vector<u32>& submeshMaterialIndices);
 
-	struct VertexShaderLayout {
-		std::vector<VertexShaderAttribute> attributes;
-	};
+    void ProcessAssimpMaterial(App* app, aiMaterial* material, Material& myMaterial, String directory);
 
-	struct VAO
-	{
-		GLuint handle;
-		GLuint programHandle;
-	};
+    void ProcessAssimpNode(const aiScene* scene, aiNode* node, Mesh* myMesh, u32 baseMeshMaterialIndex, std::vector<u32>& submeshMaterialIndices);
+
+    u32 LoadModel(App* app, const char* filename);
 }
 
 #endif

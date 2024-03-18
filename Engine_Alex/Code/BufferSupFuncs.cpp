@@ -26,8 +26,6 @@ namespace BufferManager
         return buffer;
     }
 
-
-
     void BindBuffer(const Buffer& buffer)
     {
         glBindBuffer(buffer.type, buffer.handle);
@@ -59,6 +57,4 @@ namespace BufferManager
         memcpy((u8*)buffer.data + buffer.head, data, size);
         buffer.head += size;
     }
-
-};
-
+}
