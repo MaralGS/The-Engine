@@ -166,12 +166,21 @@ struct Material
     u32             bumpTextureIdx;
 };
 
-struct Buffer {
+struct Buffer 
+{
     GLsizei size;
     GLenum type;
     GLuint handle;
     u8* data;
     u32 head;
+};
+
+struct Entity 
+{
+    glm::mat4 worldMatrix;
+    u32 modelIndex;
+    u32 localParamsOffset;
+    u32 localParamsSize;
 };
 
 #define ILOG(...)                 \
