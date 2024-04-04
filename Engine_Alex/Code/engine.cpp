@@ -351,8 +351,7 @@ void App::UpdateEntityBuffer()
         PushVec3(localUniformBuffer, light.direction);
         PushVec3(localUniformBuffer, light.position);
     }
-
-
+    //AQUIUIIIII
     u32 iteration = 0;
     for (auto it = entities.begin(); it != entities.end(); ++it)
     {
