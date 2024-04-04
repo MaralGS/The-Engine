@@ -78,6 +78,10 @@ struct App
     GLint uniformBlockAligment;
     Buffer localUniformBuffer;
     std::vector<Entity> entities;
+    std::vector<Light> lights;
+
+    GLuint globalParamsOffset;
+    GLuint globalParamsSize;
 };
 
 void Init(App* app);

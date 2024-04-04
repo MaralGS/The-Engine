@@ -179,6 +179,13 @@ GLuint FindVAO(Mesh& mesh, u32 submeshIndex, const Program& program)
     return ReturnValue;
 }
 
+glm::mat4 TransformPositionScale(const vec3& position, const vec3& scaleFactors)
+{
+    glm::mat4 ReturnValue = glm::translate(position);
+    ReturnValue = glm::scale(ReturnValue, scaleFactors);
+    return ReturnValue;
+}
+
 void Init(App* app)
 {
     // TODO: Initialize your resources here!
@@ -221,8 +228,10 @@ void Init(App* app)
     const Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
     app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
     u32 PatrickModelIndex = ModelLoader::LoadModel(app, "Patrick/Patrick.obj");
+    //u32 GroundModelIndex = ModelLoader::LoadModel(app, "./Ground.obj");
 
     //app->diceTexIdx = ModelLoader::LoadTexture2D(app, "dice.png");
+    app->mode = Mode_TexturedQuad;
 
     glEnable(GL_DEPTH_TEST);
 
@@ -231,11 +240,13 @@ void Init(App* app)
 
     app->localUniformBuffer = CreateConstantBuffer(app->maxUniformBufferSize);
 
-    app->entities.push_back({ glm::identity<glm::mat4>(), PatrickModelIndex, 0, 0 });
-    app->entities.push_back({ glm::identity<glm::mat4>(), PatrickModelIndex, 0, 0 });
-    app->entities.push_back({ glm::identity<glm::mat4>(), PatrickModelIndex, 0, 0 });
+    app->entities.push_back({ TransformPositionScale(vec3(1.0,0.0,1.0),vec3(1.0,1.0,1.0)), PatrickModelIndex, 0, 0 });
+    app->entities.push_back({ TransformPositionScale(vec3(2.0,0.0,1.0),vec3(1.0,1.0,1.0)), PatrickModelIndex, 0, 0 });
+    app->entities.push_back({ TransformPositionScale(vec3(3.0,0.0,1.0),vec3(1.0,1.0,1.0)), PatrickModelIndex, 0, 0 });
+    app->entities.push_back({ TransformPositionScale(vec3(4.0,0.0,1.0),vec3(1.0,1.0,1.0)), PatrickModelIndex, 0, 0 });
 
-    app->mode = Mode_TexturedQuad;
+    app->lights.push_back({LightType::LightType_Directional, vec3(1.0,1.0,1.0), vec3(1.0,-1.0,1.0), vec3(0.0,0.0,0.0)});
+    app->lights.push_back({LightType::LightType_Point, vec3(1.0,0.0,0.0), vec3(1.0,1.0,1.0), vec3(0.0,1.0,1.0)});
 
 
 }
@@ -258,12 +269,6 @@ glm::mat4 TransformScale(const vec3& scaleFactors)
     return glm::scale(scaleFactors);
 }
 
-glm::mat4 TransformPositionScale(const vec3& position, const vec3& scaleFactors)
-{
-    glm::mat4 ReturnValue = glm::translate(position);
-    ReturnValue = glm::scale(ReturnValue, scaleFactors);
-    return ReturnValue;
-}
 
 void Render(App* app)
 {
@@ -280,11 +285,13 @@ void Render(App* app)
         const Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
         glUseProgram(texturedMeshProgram.handle);
 
+        glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->localUniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
+
         for (auto it = app->entities.begin(); it != app->entities.end(); ++it)
         {
             glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), app->localUniformBuffer.handle,it->localParamsOffset, it->localParamsSize);
 
-            Model& model = app->models[app->patricioModel];
+            Model& model = app->models[it->modelIndex];
             Mesh& mesh = app->meshes[model.meshIdx];
 
             for (u32 i = 0; i < mesh.submeshes.size(); ++i)
@@ -330,10 +337,26 @@ void App::UpdateEntityBuffer()
 
     BufferManager::MapBuffer(localUniformBuffer, GL_WRITE_ONLY);
 
+    //Push light local params
+    globalParamsOffset = localUniformBuffer.head;
+    PushVec3(localUniformBuffer, cameraPosition);
+    PushUInt(localUniformBuffer, lights.size());
+    for (size_t i = 0; i < lights.size(); i++)
+    {
+        BufferManager::AlignHead(localUniformBuffer, sizeof(vec4));
+
+        Light& light = lights[i];
+        PushUInt(localUniformBuffer, light.type);
+        PushVec3(localUniformBuffer, light.color);
+        PushVec3(localUniformBuffer, light.direction);
+        PushVec3(localUniformBuffer, light.position);
+    }
+
+
     u32 iteration = 0;
     for (auto it = entities.begin(); it != entities.end(); ++it)
     {
-        glm::mat4 world = TransformPositionScale(vec3(0.f + (1 * iteration), 2.0f, 0.0), vec3(0.45f));
+        glm::mat4 world = it->worldMatrix;
         glm::mat4 WVP = projection * view * world;
 
         Buffer& localBuffer = localUniformBuffer;
