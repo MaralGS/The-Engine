@@ -186,6 +186,47 @@ glm::mat4 TransformPositionScale(const vec3& position, const vec3& scaleFactors)
     return ReturnValue;
 }
 
+void ColorAttachment(GLuint& colorAttachmentHandle, App* app)
+{
+    glGenTextures(1, &app->colorAttachmentHandle);
+    glBindTexture(GL_TEXTURE_2D, app->colorAttachmentHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, app->displaySize.x, app->displaySize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void DepthAttachment(GLuint& depthAttachmentHandle,App* app)
+{
+    glGenTextures(1, &depthAttachmentHandle);
+    glBindTexture(GL_TEXTURE_2D, depthAttachmentHandle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, app->displaySize.x, app->displaySize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void FrameBufferAttachment(GLuint& colorAttachmentHandle, GLuint& depthAttachmentHandle,App* app)
+{
+    glGenFramebuffers(1, &app->frameBufferHandle);
+    glBindFramebuffer(GL_FRAMEBUFFER, app->frameBufferHandle);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, app->colorAttachmentHandle, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthAttachmentHandle,0);
+
+    GLuint drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(ARRAY_COUNT(drawBuffers), drawBuffers);
+
+    //glDrawBuffers(1, &app->colorAttachmentHandle);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void Init(App* app)
 {
     // TODO: Initialize your resources here!
@@ -230,8 +271,7 @@ void Init(App* app)
     u32 PatrickModelIndex = ModelLoader::LoadModel(app, "Patrick/Patrick.obj");
     //u32 GroundModelIndex = ModelLoader::LoadModel(app, "./Ground.obj");
 
-    //app->diceTexIdx = ModelLoader::LoadTexture2D(app, "dice.png");
-    app->mode = Mode_TexturedQuad;
+    app->mode = Mode_Deferred;
 
     glEnable(GL_DEPTH_TEST);
 
@@ -248,6 +288,14 @@ void Init(App* app)
     app->lights.push_back({LightType::LightType_Directional, vec3(1.0,1.0,1.0), vec3(1.0,-1.0,1.0), vec3(0.0,0.0,0.0)});
     app->lights.push_back({LightType::LightType_Point, vec3(1.0,0.0,0.0), vec3(1.0,1.0,1.0), vec3(0.0,1.0,1.0)});
 
+    //Framebuffer class
+    GLuint colorAttachmentHandle = 0;
+    ColorAttachment(colorAttachmentHandle,app);
+
+    GLuint depthAttachmentHandle = 0;
+    DepthAttachment(depthAttachmentHandle,app);
+
+    FrameBufferAttachment(colorAttachmentHandle, depthAttachmentHandle, app);
 
 }
 
@@ -274,13 +322,21 @@ void Render(App* app)
 {
     switch (app->mode)
     {
-    case Mode_TexturedQuad:
+    case Mode_Deferred:
     {
         app->UpdateEntityBuffer();
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, app->frameBufferHandle);
+
+        GLuint drawBuffers[] = { app->colorAttachmentHandle };
+        glDrawBuffers(ARRAY_COUNT(drawBuffers), drawBuffers);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         const Program& texturedMeshProgram = app->programs[app->texturedMeshProgramIdx];
         glUseProgram(texturedMeshProgram.handle);
@@ -312,6 +368,7 @@ void Render(App* app)
 
 
         }  
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     break;
 
