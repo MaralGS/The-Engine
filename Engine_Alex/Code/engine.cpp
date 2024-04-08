@@ -352,6 +352,7 @@ void App::UpdateEntityBuffer()
         PushVec3(localUniformBuffer, light.position);
     }
     //AQUIUIIIII
+    globalParamsSize = localUniformBuffer.head - globalParamsOffset;
     u32 iteration = 0;
     for (auto it = entities.begin(); it != entities.end(); ++it)
     {
