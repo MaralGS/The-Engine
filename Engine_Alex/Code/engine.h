@@ -25,6 +25,9 @@ const u16 indices[] =
 struct App
 {
     void UpdateEntityBuffer();
+
+    void ConfigureFrameBuffer(FrameBuffer& aConfigFB);
+    void RenderGeometry(const Program& texturedMeshProgram);
     // Loop
     f32  deltaTime;
     bool isRunning;
@@ -43,6 +46,10 @@ struct App
     std::vector<Mesh>       meshes;
     std::vector<Model>      models;
     std::vector<Program>    programs;
+
+    GLuint renderToBackBufferShader;
+    GLuint renderToFrameBufferShader;
+    GLuint freamebufferToQuadShader;
 
     // program indices
     u32 texturedGeometryProgramIdx = 0;
@@ -83,8 +90,7 @@ struct App
     GLuint globalParamsOffset;
     GLuint globalParamsSize;
 
-    GLuint frameBufferHandle;
-    GLuint colorAttachmentHandle;
+    FrameBuffer defferredFrameBuffer;
 };
 
 void Init(App* app);
