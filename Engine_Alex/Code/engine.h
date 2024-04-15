@@ -24,10 +24,15 @@ const u16 indices[] =
 
 struct App
 {
+    void ColorAttachment(GLuint& colorAttachmentHandle);
+    void DepthAttachment(GLuint& depthAttachmentHandle);
     void UpdateEntityBuffer();
 
     void ConfigureFrameBuffer(FrameBuffer& aConfigFB);
     void RenderGeometry(const Program& texturedMeshProgram);
+
+    const GLuint CreateTexture(const bool isFloatingPoint = false);
+
     // Loop
     f32  deltaTime;
     bool isRunning;
