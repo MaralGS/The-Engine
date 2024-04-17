@@ -38,7 +38,9 @@ void main()
 	vPosition = vec3( uWorldMatrix * vec4(aPosition, 1.0));
 	vNormal = vec3(uWorldMatrix * vec4(aNormal, 0.0));
 	vViewDir = uCameraPosition - vPosition;
-	gl_Position = uWorldViewProjectMatrix * vec4(aPosition,1.0);
+	float clippingScale = 1.0;
+
+	gl_Position = uWorldViewProjectMatrix * vec4(aPosition, clippingScale);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
@@ -58,13 +60,12 @@ layout(binding = 0, std140) uniform GlobalParams
 	Light uLight[16];
 };
 
-out vec2 vTexCoord;
-out vec3 vPosition;
-out vec3 vNormal;
-out vec3 vViewDir;
+in vec2 vTexCoord;
+in vec3 vPosition;
+in vec3 vNormal;
+in vec3 vViewDir;
 
 uniform sampler2D uTexture;
-
 layout(location = 0) out vec4 oAlbedo;
 layout(location = 1) out vec4 oNormals;
 layout(location = 2) out vec4 oPosition;

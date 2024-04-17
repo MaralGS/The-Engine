@@ -44,7 +44,7 @@ void main()
 	
 	float clippingScale = 1.0;
 
-	gl_Position = uWorldViewProjectMatrix * vec4(aPosition,1.0);
+	gl_Position = uWorldViewProjectMatrix * vec4(aPosition, clippingScale);
 }
 
 #elif defined(FRAGMENT) ///////////////////////////////////////////////
@@ -70,7 +70,6 @@ in vec3 vNormal;
 in vec3 vViewDir;
 
 uniform sampler2D uTexture;
-
 layout(location = 0) out vec4 oColor;
 
 void CalculateBlitVars(in Light light, out vec3 ambient, out vec3 diffuse, out vec3 specular)
@@ -83,11 +82,11 @@ void CalculateBlitVars(in Light light, out vec3 ambient, out vec3 diffuse, out v
 		float diff = max(dot(vNormal, lightDir), 0.0f);
 		diffuse = diff * light.color;
 
-		float specularStrenght = 0.1f;
+		float specularStrength = 0.1f;
 		vec3 reflectDir = reflect(-lightDir, vNormal);
 		vec3 normalViewDir = normalize(vViewDir);
 		float spec = pow(max(dot(normalViewDir, reflectDir),0.0f), 32);
-		specular = specularStrenght * spec * light.color;
+		specular = specularStrength * spec * light.color;
 }
 
 void main()
@@ -97,9 +96,7 @@ void main()
 
 	for(int i = 0; i < uLightCount; ++i)
 	{
-
 		vec3 lightResult = vec3(0.0f);
-
 		vec3 ambient = vec3(0.0);
 		vec3 diffuse = vec3(0.0);
 		vec3 specular = vec3(0.0);
@@ -115,7 +112,7 @@ void main()
 		}
 		else
 		{
-			Light light = uLight[i];
+		    Light light = uLight[i];
 
 			float constant = 1.0f;
 			float linear = 0.09f;

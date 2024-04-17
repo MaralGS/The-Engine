@@ -36,7 +36,6 @@ uniform sampler2D uAlbedo;
 uniform sampler2D uNormals;
 uniform sampler2D uPosition;
 uniform sampler2D uViewDir;
-
 layout(location = 0) out vec4 oColor;
 
 void CalculateBlitVars(in Light light, out vec3 ambient, out vec3 diffuse, out vec3 specular)
@@ -51,11 +50,11 @@ void CalculateBlitVars(in Light light, out vec3 ambient, out vec3 diffuse, out v
 		float diff = max(dot(vNormal, lightDir), 0.0f);
 		diffuse = diff * light.color;
 
-		float specularStrenght = 0.1f;
+		float specularStrength = 0.1f;
 		vec3 reflectDir = reflect(-lightDir, vNormal);
 		vec3 normalViewDir = normalize(vViewDir);
 		float spec = pow(max(dot(normalViewDir, reflectDir),0.0f), 32);
-		specular = specularStrenght * spec * light.color;
+		specular = specularStrength * spec * light.color;
 }
 
 void main()

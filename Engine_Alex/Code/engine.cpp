@@ -214,6 +214,54 @@ void App::DepthAttachment(GLuint& depthAttachmentHandle)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void App::ConfigureFrameBuffer(FrameBuffer& aConfigFB)
+{
+
+
+
+    const GLuint NUMBER_OF_CA = 3;
+    /*for (GLuint i = 0; i < NUMBER_OF_CA; i++)
+    {
+        GLuint colorAttachmentHandle = 0;
+
+        ColorAttachment(colorAttachmentHandle);
+
+        aConfigFB.ColorAttachment.push_back(colorAttachmentHandle);
+    }
+    */
+
+    aConfigFB.ColorAttachment.push_back(CreateTexture());
+    aConfigFB.ColorAttachment.push_back(CreateTexture(true));
+    aConfigFB.ColorAttachment.push_back(CreateTexture(true));
+    aConfigFB.ColorAttachment.push_back(CreateTexture(true));
+
+    DepthAttachment(aConfigFB.depthHandle);
+    glGenFramebuffers(1, &aConfigFB.fbHandle);
+    glBindFramebuffer(GL_FRAMEBUFFER, aConfigFB.fbHandle);
+
+    std::vector<GLuint> drawBuffers;
+
+    for (size_t i = 0; i < aConfigFB.ColorAttachment.size(); i++)
+    {
+        GLuint position = GL_COLOR_ATTACHMENT0 + i;
+        glFramebufferTexture(GL_FRAMEBUFFER, position, aConfigFB.ColorAttachment[i], 0);
+        drawBuffers.push_back(position);
+    }
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, aConfigFB.depthHandle, 0);
+
+    glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+
+    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
+    {
+        int i = 0;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
 
 void Init(App* app)
 {
@@ -248,27 +296,33 @@ void Init(App* app)
     app->freamebufferToQuadShader = LoadProgram(app, "FB_TO_BB.glsl", "FB_TO_BB");
 
     //app->texturedMeshProgramIdx = LoadProgram(app, "base_model.glsl", "BASE_MODEL");
-    const Program& texturedMeshProgram = app->programs[app->renderToBackBufferShader];
+    const Program& texturedMeshProgram = app->programs[app->renderToFrameBufferShader];
     app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
     u32 PatrickModelIndex = ModelLoader::LoadModel(app, "Patrick/Patrick.obj");
-    //u32 GroundModelIndex = ModelLoader::LoadModel(app, "./Ground.obj");
+    u32 GroundModelIndex = ModelLoader::LoadModel(app, "Patrick/Ground.obj");
 
+    VertexBufferLayout vertexBufferLayout = {};
+    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });
+    vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 2, 2, 3 * sizeof(float) });
+    vertexBufferLayout.stride = 5 * sizeof(float);
 
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
 
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &app->maxUniformBufferSize);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &app->uniformBlockAligment);
 
     app->localUniformBuffer = CreateConstantBuffer(app->maxUniformBufferSize);
 
-    app->entities.push_back({ TransformPositionScale(vec3(1.0,0.0,1.0),vec3(1.0,1.0,1.0)), PatrickModelIndex, 0, 0 });
-    app->entities.push_back({ TransformPositionScale(vec3(2.0,0.0,1.0),vec3(1.0,1.0,1.0)), PatrickModelIndex, 0, 0 });
-    app->entities.push_back({ TransformPositionScale(vec3(3.0,0.0,1.0),vec3(1.0,1.0,1.0)), PatrickModelIndex, 0, 0 });
-    app->entities.push_back({ TransformPositionScale(vec3(4.0,0.0,1.0),vec3(1.0,1.0,1.0)), PatrickModelIndex, 0, 0 });
+    app->entities.push_back({ TransformPositionScale(vec3(0.f, 2.0f, 1.0), vec3(0.45f)),PatrickModelIndex,0,0 });
+    app->entities.push_back({ TransformPositionScale(vec3(1.f, 2.0f, 1.0), vec3(0.45f)),PatrickModelIndex,0,0 });
+    app->entities.push_back({ TransformPositionScale(vec3(2.f, 2.0f, 1.0), vec3(0.45f)),PatrickModelIndex,0,0 });
+    app->entities.push_back({ TransformPositionScale(vec3(3.f, 2.0f, 1.0), vec3(0.45f)),PatrickModelIndex,0,0 });
 
-    app->lights.push_back({LightType::LightType_Directional, vec3(1.0,1.0,1.0), vec3(1.0,-1.0,1.0), vec3(0.0,0.0,0.0)});
-    app->lights.push_back({LightType::LightType_Point, vec3(1.0,0.0,0.0), vec3(1.0,1.0,1.0), vec3(0.0,1.0,1.0)});
+    app->entities.push_back({ TransformPositionScale(vec3(0.0, -3.0, 0.0), vec3(1.0, 1.0, 1.0)), GroundModelIndex, 0, 0 });
+
+    app->lights.push_back({ LightType::LightType_Directional,vec3(1.0,1.0,1.0),vec3(1.0,-1.0,1.0),vec3(1.0,0.0,0.0) });
+    app->lights.push_back({ LightType::LightType_Point,vec3(1.0,0.0,0.0),vec3(1.0,1.0,1.0),vec3(0.0,1.0,1.0) });
 
     app->ConfigureFrameBuffer(app->defferredFrameBuffer);
 
@@ -299,7 +353,7 @@ void Gui(App* app)
     {
         for (size_t i = 0; i < app->defferredFrameBuffer.ColorAttachment.size(); i++)
         {
-            ImGui::Image((ImTextureID)app->defferredFrameBuffer.ColorAttachment[i], ImVec2(300, 150), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Image((ImTextureID)app->defferredFrameBuffer.ColorAttachment[i], ImVec2(250, 150), ImVec2(0, 1), ImVec2(1, 0));
         }
     }
     ImGui::End();
@@ -324,18 +378,16 @@ void Render(App* app)
     {
         app->UpdateEntityBuffer();
 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
 
-        const Program& texturedMeshProgram = app->programs[app->renderToFrameBufferShader];
+        const Program& texturedMeshProgram = app->programs[app->renderToBackBufferShader];
         glUseProgram(texturedMeshProgram.handle);
 
-        glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), app->localUniformBuffer.handle, app->globalParamsOffset, app->globalParamsSize);
-
         app->RenderGeometry(texturedMeshProgram);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     break;
 
@@ -348,8 +400,12 @@ void Render(App* app)
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, app->displaySize.x, app->displaySize.y);
+
         glBindFramebuffer(GL_FRAMEBUFFER, app->defferredFrameBuffer.fbHandle);
-        glDrawBuffers(app->defferredFrameBuffer.ColorAttachment.size(), app->defferredFrameBuffer.ColorAttachment.data());
+
+        GLuint drawBuffers[] = { app->defferredFrameBuffer.fbHandle };
+        glDrawBuffers(app->defferredFrameBuffer.ColorAttachment.size(), drawBuffers);
+
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -388,7 +444,6 @@ void Render(App* app)
         glBindVertexArray(app->vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
-        glBindTexture(GL_TEXTURE_2D, 0);
         glBindVertexArray(0);
         glUseProgram(0);
 
@@ -399,110 +454,15 @@ void Render(App* app)
     }
 }
 
-void App::UpdateEntityBuffer()
-{
-    float aspectRatio = (float)displaySize.x / (float)displaySize.y;
-    float znear = 0.1f;
-    float zfar = 1000.0f;
-    glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, znear, zfar);
-
-    vec3 target = vec3(0.f, 0.f, 0.f);
-    vec3 cameraPosition = vec3(5.0, 5.0, 5.0);
-
-    vec3 zCam = glm::normalize(cameraPosition - target);
-    vec3 xCam = glm::cross(zCam, vec3(0, 1, 0));
-    vec3 yCam = glm::cross(xCam, zCam);
-
-    glm::mat4 view = glm::lookAt(cameraPosition, target, yCam);
-
-    BufferManager::MapBuffer(localUniformBuffer, GL_WRITE_ONLY);
-
-    //Push light local params
-    globalParamsOffset = localUniformBuffer.head;
-    PushVec3(localUniformBuffer, cameraPosition);
-    PushUInt(localUniformBuffer, lights.size());
-    for (size_t i = 0; i < lights.size(); i++)
-    {
-        BufferManager::AlignHead(localUniformBuffer, sizeof(vec4));
-
-        Light& light = lights[i];
-        PushUInt(localUniformBuffer, light.type);
-        PushVec3(localUniformBuffer, light.color);
-        PushVec3(localUniformBuffer, light.direction);
-        PushVec3(localUniformBuffer, light.position);
-    }
-    //AQUIUIIIII
-    globalParamsSize = localUniformBuffer.head - globalParamsOffset;
-    u32 iteration = 0;
-    for (auto it = entities.begin(); it != entities.end(); ++it)
-    {
-        glm::mat4 world = it->worldMatrix;
-        glm::mat4 WVP = projection * view * world;
-
-        Buffer& localBuffer = localUniformBuffer;
-        BufferManager::AlignHead(localBuffer,uniformBlockAligment);
-        it->localParamsOffset = localUniformBuffer.head;
-        PushMat4(localUniformBuffer, world);
-        PushMat4(localUniformBuffer, WVP);
-        it->localParamsSize = localBuffer.head - it->localParamsOffset;
-        ++iteration;
-    }
-    BufferManager::UnmapBuffer(localUniformBuffer);
-}
-
-void App::ConfigureFrameBuffer(FrameBuffer& aConfigFB)
-{
-    aConfigFB.ColorAttachment.push_back(CreateTexture());
-    aConfigFB.ColorAttachment.push_back(CreateTexture(true));
-    aConfigFB.ColorAttachment.push_back(CreateTexture(true));
-    aConfigFB.ColorAttachment.push_back(CreateTexture(true));
-
-
-    const GLuint NUMBER_OF_CA = 3;
-    /*for (GLuint i = 0; i < NUMBER_OF_CA; i++)
-    {
-        GLuint colorAttachmentHandle = 0;
-
-        ColorAttachment(colorAttachmentHandle);
-
-        aConfigFB.ColorAttachment.push_back(colorAttachmentHandle);
-    }
-    */
-    GLuint depthAttachmentHandle = 0;
-
-    DepthAttachment(depthAttachmentHandle);
-    glGenFramebuffers(1, &aConfigFB.fbHandle);
-    glBindFramebuffer(GL_FRAMEBUFFER, aConfigFB.fbHandle);
-
-    std::vector<GLuint> drawBuffers;
-
-    for (size_t i = 0; i < NUMBER_OF_CA; i++)
-    {
-        GLuint position = GL_COLOR_ATTACHMENT0 + i;
-        glFramebufferTexture(GL_FRAMEBUFFER, position, aConfigFB.ColorAttachment[i], 0);
-        drawBuffers.push_back(position);
-    }
-
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, aConfigFB.depthHandle,0);
-
-    glDrawBuffers(drawBuffers.size(),drawBuffers.data());
-
-    GLenum framebufferStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-    if (framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
-    {
-        int i = 0;
-    }
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-   
-}
 
 void App::RenderGeometry(const Program& texturedMeshProgram)
 {
+    glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(0), localUniformBuffer.handle, globalParamsOffset, globalParamsSize);
+
     for (auto it = entities.begin(); it != entities.end(); ++it)
     {
         glBindBufferRange(GL_UNIFORM_BUFFER, BINDING(1), localUniformBuffer.handle, it->localParamsOffset, it->localParamsSize);
+
 
         Model& model = models[it->modelIndex];
         Mesh& mesh = meshes[model.meshIdx];
@@ -531,8 +491,8 @@ const GLuint App::CreateTexture(const bool isFloatingPoint)
 {
     GLuint textureHandle;
 
-    GLenum internalFormat = isFloatingPoint ? GL_RGBA16F : GL_RGBA8;
-    GLenum format = GL_RGBA8;
+    GLenum internalFormat = isFloatingPoint? GL_RGBA16F : GL_RGBA8;
+    GLenum format = GL_RGBA;
     GLenum dataType = isFloatingPoint ? GL_FLOAT : GL_UNSIGNED_BYTE;
 
     glGenTextures(1, &textureHandle);
@@ -545,4 +505,55 @@ const GLuint App::CreateTexture(const bool isFloatingPoint)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
     return textureHandle;
+}
+
+void App::UpdateEntityBuffer()
+{
+    float aspectRatio = (float)displaySize.x / (float)displaySize.y;
+    float znear = 0.1f;
+    float zfar = 1000.0f;
+    glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, znear, zfar);
+
+    vec3 target = vec3(0.f, 0.f, 0.f);
+    vec3 cameraPosition = vec3(5.0, 5.0, 5.0);
+
+    vec3 zCam = glm::normalize(cameraPosition - target);
+    vec3 xCam = glm::cross(zCam, vec3(0, 1, 0));
+    vec3 yCam = glm::cross(xCam, zCam);
+
+    glm::mat4 view = glm::lookAt(cameraPosition, target, yCam);
+
+    BufferManager::MapBuffer(localUniformBuffer, GL_WRITE_ONLY);
+
+    //Push light local params
+    globalParamsOffset = localUniformBuffer.head;
+    PushVec3(localUniformBuffer, cameraPosition);
+    PushUInt(localUniformBuffer, lights.size());
+    for (size_t i = 0; i < lights.size(); ++i)
+    {
+        BufferManager::AlignHead(localUniformBuffer, sizeof(vec4));
+
+        Light& light = lights[i];
+        PushUInt(localUniformBuffer, light.type);
+        PushVec3(localUniformBuffer, light.color);
+        PushVec3(localUniformBuffer, light.direction);
+        PushVec3(localUniformBuffer, light.position);
+    }
+    //AQUIUIIIII
+    globalParamsSize = localUniformBuffer.head - globalParamsOffset;
+    u32 iteration = 0;
+    for (auto it = entities.begin(); it != entities.end(); ++it)
+    {
+        glm::mat4 world = it->worldMatrix;
+        glm::mat4 WVP = projection * view * world;
+
+        Buffer& localBuffer = localUniformBuffer;
+        BufferManager::AlignHead(localBuffer, uniformBlockAligment);
+        it->localParamsOffset = localBuffer.head;
+        PushMat4(localBuffer, world);
+        PushMat4(localBuffer, WVP);
+        it->localParamsSize = localBuffer.head - it->localParamsOffset;
+        ++iteration;
+    }
+    BufferManager::UnmapBuffer(localUniformBuffer);
 }
