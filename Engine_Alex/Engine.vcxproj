@@ -23,6 +23,7 @@
     <ClCompile Include="Code\engine.cpp" />
     <ClCompile Include="Code\ModelLoadingFuncs.cpp" />
     <ClCompile Include="Code\platform.cpp" />
+    <ClCompile Include="ModuleCamera3D.cpp" />
     <ClCompile Include="ThirdParty\glad\include\glad\glad.c" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui-docking\imgui_demo.cpp" />
@@ -39,6 +40,7 @@
     <ClInclude Include="Code\Globals.h" />
     <ClInclude Include="Code\ModelLoadingFuncs.h" />
     <ClInclude Include="Code\platform.h" />
+    <ClInclude Include="ModuleCamera3D.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\glad\include\glad\khrplatform.h" />
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h" />

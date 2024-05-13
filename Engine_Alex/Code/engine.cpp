@@ -514,14 +514,25 @@ void App::UpdateEntityBuffer()
     float zfar = 1000.0f;
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, znear, zfar);
 
+
     vec3 target = vec3(0.f, 0.f, 0.f);
     vec3 cameraPosition = vec3(5.0, 5.0, 5.0);
 
-    vec3 zCam = glm::normalize(cameraPosition - target);
-    vec3 xCam = glm::cross(zCam, vec3(0, 1, 0));
-    vec3 yCam = glm::cross(xCam, zCam);
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    glm::mat4 view = glm::lookAt(cameraPosition, target, yCam);
+    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
+    const float cameraSpeed = 1.00f; // adjust accordingly
+    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_W) == GLFW_PRESS)
+        cameraPosition += cameraSpeed * xCam;
+    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_S) == GLFW_PRESS)
+        cameraPosition -= cameraSpeed * xCam;
+    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_A) == GLFW_PRESS)
+        cameraPosition -= glm::normalize(glm::cross(xCam, yCam)) * cameraSpeed;
+    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_D) == GLFW_PRESS)
+        cameraPosition += glm::normalize(glm::cross(xCam, yCam)) * cameraSpeed;
 
     BufferManager::MapBuffer(localUniformBuffer, GL_WRITE_ONLY);
 

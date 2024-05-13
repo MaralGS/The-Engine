@@ -57,6 +57,9 @@
     <ClCompile Include="Code\ModelLoadingFuncs.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="ModuleCamera3D.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-docking\imconfig.h">
@@ -105,6 +108,9 @@
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="Code\ModelLoadingFuncs.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="ModuleCamera3D.h">
       <Filter>Engine</Filter>
     </ClInclude>
   </ItemGroup>
