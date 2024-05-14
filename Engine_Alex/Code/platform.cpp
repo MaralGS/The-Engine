@@ -42,15 +42,12 @@ void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
     app->input.mousePos.x = xpos;
     app->input.mousePos.y = ypos;
 
-
-
     const float sensitivity = 0.1f;
     app->input.mouseDelta.x *= sensitivity;
     app->input.mouseDelta.y *= sensitivity;
 
     app->yaw += app->input.mouseDelta.x;
     app->pitch += app->input.mouseDelta.y;
-
 
     if (app->pitch > 89.0f)
         app->pitch = 89.0f;
