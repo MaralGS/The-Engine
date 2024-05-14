@@ -38,9 +38,30 @@ void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
 {
     App* app = (App*)glfwGetWindowUserPointer(window);
     app->input.mouseDelta.x = xpos - app->input.mousePos.x;
-    app->input.mouseDelta.y = ypos - app->input.mousePos.y;
+    app->input.mouseDelta.y = app->input.mousePos.y - ypos;
     app->input.mousePos.x = xpos;
     app->input.mousePos.y = ypos;
+
+
+
+    const float sensitivity = 0.1f;
+    app->input.mouseDelta.x *= sensitivity;
+    app->input.mouseDelta.y *= sensitivity;
+
+    app->yaw += app->input.mouseDelta.x;
+    app->pitch += app->input.mouseDelta.y;
+
+
+    if (app->pitch > 89.0f)
+        app->pitch = 89.0f;
+    if (app->pitch < -89.0f)
+        app->pitch = -89.0f;
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(app->yaw)) * cos(glm::radians(app->pitch));
+    direction.y = sin(glm::radians(app->pitch));
+    direction.z = sin(glm::radians(app->yaw)) * cos(glm::radians(app->pitch));
+    app->cameraFront = glm::normalize(direction);
 }
 
 void OnGlfwMouseEvent(GLFWwindow* window, int button, int event, int modifiers)

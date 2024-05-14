@@ -514,31 +514,15 @@ void App::UpdateEntityBuffer()
     float zfar = 1000.0f;
     glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, znear, zfar);
 
+    glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
-    vec3 target = vec3(0.f, 0.f, 0.f);
-    vec3 cameraPosition = vec3(5.0, 5.0, 5.0);
-
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
-    const float cameraSpeed = 1.00f; // adjust accordingly
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_W) == GLFW_PRESS)
-        cameraPosition += cameraSpeed * xCam;
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_S) == GLFW_PRESS)
-        cameraPosition -= cameraSpeed * xCam;
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_A) == GLFW_PRESS)
-        cameraPosition -= glm::normalize(glm::cross(xCam, yCam)) * cameraSpeed;
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_D) == GLFW_PRESS)
-        cameraPosition += glm::normalize(glm::cross(xCam, yCam)) * cameraSpeed;
-
+    processInput(glfwGetCurrentContext());
+    
     BufferManager::MapBuffer(localUniformBuffer, GL_WRITE_ONLY);
 
     //Push light local params
     globalParamsOffset = localUniformBuffer.head;
-    PushVec3(localUniformBuffer, cameraPosition);
+    PushVec3(localUniformBuffer, cameraPos);
     PushUInt(localUniformBuffer, lights.size());
     for (size_t i = 0; i < lights.size(); ++i)
     {
@@ -568,3 +552,21 @@ void App::UpdateEntityBuffer()
     }
     BufferManager::UnmapBuffer(localUniformBuffer);
 }
+
+void App::processInput(GLFWwindow* window)
+{
+
+    float cameraSpeed = 2.5f * deltaTime;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+

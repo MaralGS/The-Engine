@@ -28,6 +28,8 @@ struct App
     void DepthAttachment(GLuint& depthAttachmentHandle);
     void UpdateEntityBuffer();
 
+    void processInput(GLFWwindow* window);
+
     void ConfigureFrameBuffer(FrameBuffer& aConfigFB);
     void RenderGeometry(const Program& texturedMeshProgram);
 
@@ -96,6 +98,14 @@ struct App
     GLuint globalParamsSize;
 
     FrameBuffer defferredFrameBuffer;
+
+    //Camera Parameters
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    float yaw;
+    float pitch;
 };
 
 void Init(App* app);
