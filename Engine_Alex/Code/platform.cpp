@@ -37,6 +37,14 @@ void OnGlfwError(int errorCode, const char *errorMessage)
 void OnGlfwMouseMoveEvent(GLFWwindow* window, double xpos, double ypos)
 {
     App* app = (App*)glfwGetWindowUserPointer(window);
+
+    if (app->firstMouse)
+    {
+        app->input.mousePos.x = xpos;
+        app->input.mousePos.y = ypos;
+        app->firstMouse = false;
+    }
+
     app->input.mouseDelta.x = xpos - app->input.mousePos.x;
     app->input.mouseDelta.y = app->input.mousePos.y - ypos;
     app->input.mousePos.x = xpos;

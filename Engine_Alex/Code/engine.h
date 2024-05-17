@@ -31,6 +31,8 @@ struct App
     void processInput(GLFWwindow* window);
 
     void ConfigureFrameBuffer(FrameBuffer& aConfigFB);
+    void CreatePointLight(u32 GeometryIndex, vec3 position, vec3 direction, vec3 color);
+    void CreateDirectionalLight(u32 GeometryIndex, vec3 color, vec3 direction, vec3 position);
     void RenderGeometry(const Program& texturedMeshProgram);
 
     const GLuint CreateTexture(const bool isFloatingPoint = false);
@@ -106,6 +108,7 @@ struct App
 
     float yaw;
     float pitch;
+    bool firstMouse = true;
 };
 
 void Init(App* app);

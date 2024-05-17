@@ -300,7 +300,8 @@ void Init(App* app)
     app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
     u32 PatrickModelIndex = ModelLoader::LoadModel(app, "Patrick/Patrick.obj");
     u32 GroundModelIndex = ModelLoader::LoadModel(app, "Patrick/Ground.obj");
-    u32 BakerHouseIndex = ModelLoader::LoadModel(app, "Patrick/Goomba/SpongebobDefault.obj");
+    u32 SphereLightIndex = ModelLoader::LoadModel(app, "Patrick/sphere_light.obj");
+    u32 SquereLightIndex = ModelLoader::LoadModel(app, "Patrick/SquereLight.obj");
 
     VertexBufferLayout vertexBufferLayout = {};
     vertexBufferLayout.attributes.push_back(VertexBufferAttribute{ 0, 3, 0 });
@@ -315,19 +316,26 @@ void Init(App* app)
 
     app->localUniformBuffer = CreateConstantBuffer(app->maxUniformBufferSize);
 
-    app->entities.push_back({ TransformPositionScale(vec3(0.f, 2.0f, 1.0), vec3(0.45f)),PatrickModelIndex,0,0 });
-    app->entities.push_back({ TransformPositionScale(vec3(1.f, 2.0f, 1.0), vec3(0.45f)),PatrickModelIndex,0,0 });
-    app->entities.push_back({ TransformPositionScale(vec3(2.f, 2.0f, 1.0), vec3(0.45f)),PatrickModelIndex,0,0 });
-
-    app->entities.push_back({ TransformPositionScale(vec3(-3.f, 2.0f, 3.0), vec3(15.0f)),BakerHouseIndex,0,0 });
-    
+    app->entities.push_back({ TransformPositionScale(vec3(0.f, 2.0f, 1.0f), vec3(0.45f)),PatrickModelIndex,0,0 });
+    app->entities.push_back({ TransformPositionScale(vec3(1.f, 2.0f, 1.0f), vec3(0.45f)),PatrickModelIndex,0,0 });
+    app->entities.push_back({ TransformPositionScale(vec3(2.f, 2.0f, 1.0f), vec3(0.45f)),PatrickModelIndex,0,0 });
 
     app->entities.push_back({ TransformPositionScale(vec3(0.0, -3.0, 0.0), vec3(1.0, 1.0, 1.0)), GroundModelIndex, 0, 0 });
 
-    app->lights.push_back({ LightType::LightType_Directional,vec3(1.0,1.0,1.0),vec3(1.0,-1.0,1.0),vec3(1.0,0.0,0.0) });
-    app->lights.push_back({ LightType::LightType_Point,vec3(0.0,1.0,0.0),vec3(1.0,1.0,1.0),vec3(0.0,1.0,1.0) });
+
+    //LIGHTS
+
+   //app->entities.push_back({ TransformPositionScale(vec3(1.0f,2.0f,3.0f), vec3(0.1f)),SphereLightIndex,0,0 });
+   //app->entities.push_back({ TransformPositionScale(vec3(1.0,-1.0,1.0), vec3(0.1f)),SquereLightIndex,0,0 });
+   //
+   //app->lights.push_back({ LightType::LightType_Directional,vec3(1.0,1.0,1.0),vec3(1.0,-1.0,1.0),vec3(1.0,0.0,0.0) });
+   //app->lights.push_back({ LightType::LightType_Point,vec3(0.0,1.0,0.0),vec3(1.0,2.0,3.0),vec3(0.0,1.0,1.0) });
+
+    app->CreatePointLight(SphereLightIndex, vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0, 1.0, 3.0));
+    app->CreateDirectionalLight(SquereLightIndex, vec3(1.0, 1.0, 1.0), vec3(0.0, 1.0, 1.0), vec3(1.0, 0.0, 0.0));
 
     app->ConfigureFrameBuffer(app->defferredFrameBuffer);
+
 
     app->mode = Mode_Deferred;
 
@@ -364,7 +372,23 @@ void Gui(App* app)
 
 void Update(App* app)
 {
-    // You can handle app->input keyboard/mouse here
+    
+}
+
+void App::CreatePointLight(u32 GeometryIndex, vec3 color, vec3 direction, vec3 position)
+{
+    lights.push_back({ LightType::LightType_Point, color, direction, position});
+    entities.push_back({ TransformPositionScale(position, vec3(0.1f)),GeometryIndex, 0, 0});
+    
+    //app->entities.push_back({ TransformPositionScale(vec3(1.0,-1.0,1.0), vec3(0.1f)),SquereLightIndex,0,0 });
+}
+
+void App::CreateDirectionalLight(u32 GeometryIndex, vec3 color, vec3 direction, vec3 position)
+{
+    lights.push_back({ LightType::LightType_Directional, color, direction, position });
+    entities.push_back({ TransformPositionScale(position, vec3(0.1f)),GeometryIndex, 0, 0 });
+
+    //app->entities.push_back({ TransformPositionScale(vec3(1.0,-1.0,1.0), vec3(0.1f)),SquereLightIndex,0,0 });
 }
 
 glm::mat4 TransformScale(const vec3& scaleFactors)
@@ -406,8 +430,7 @@ void Render(App* app)
 
         glBindFramebuffer(GL_FRAMEBUFFER, app->defferredFrameBuffer.fbHandle);
 
-        GLuint drawBuffers[] = { app->defferredFrameBuffer.fbHandle };
-        glDrawBuffers(app->defferredFrameBuffer.ColorAttachment.size(), drawBuffers);
+        glDrawBuffers(app->defferredFrameBuffer.ColorAttachment.size(), app->defferredFrameBuffer.ColorAttachment.data());
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -537,7 +560,7 @@ void App::UpdateEntityBuffer()
         PushVec3(localUniformBuffer, light.direction);
         PushVec3(localUniformBuffer, light.position);
     }
-    //AQUIUIIIII
+
     globalParamsSize = localUniformBuffer.head - globalParamsOffset;
     u32 iteration = 0;
     for (auto it = entities.begin(); it != entities.end(); ++it)
@@ -558,7 +581,6 @@ void App::UpdateEntityBuffer()
 
 void App::processInput(GLFWwindow* window)
 {
-
     float cameraSpeed = 2.5f * deltaTime;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -569,7 +591,5 @@ void App::processInput(GLFWwindow* window)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
