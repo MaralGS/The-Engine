@@ -299,6 +299,7 @@ void Init(App* app)
     const Program& texturedMeshProgram = app->programs[app->renderToFrameBufferShader];
     app->texturedMeshProgram_uTexture = glGetUniformLocation(texturedMeshProgram.handle, "uTexture");
     u32 PatrickModelIndex = ModelLoader::LoadModel(app, "Patrick/Patrick.obj");
+    u32 HouseModelIndex = ModelLoader::LoadModel(app, "Patrick/BakerHouse.fbx");
     u32 GroundModelIndex = ModelLoader::LoadModel(app, "Patrick/Ground.obj");
     u32 SphereLightIndex = ModelLoader::LoadModel(app, "Patrick/sphere_light.obj");
     u32 SquereLightIndex = ModelLoader::LoadModel(app, "Patrick/SquereLight.obj");
@@ -319,20 +320,23 @@ void Init(App* app)
     app->entities.push_back({ TransformPositionScale(vec3(0.f, 2.0f, 1.0f), vec3(0.45f)),PatrickModelIndex,0,0 });
     app->entities.push_back({ TransformPositionScale(vec3(1.f, 2.0f, 1.0f), vec3(0.45f)),PatrickModelIndex,0,0 });
     app->entities.push_back({ TransformPositionScale(vec3(2.f, 2.0f, 1.0f), vec3(0.45f)),PatrickModelIndex,0,0 });
+    app->entities.push_back({ TransformPositionScale(vec3(2.f, 0.0f, 10.0f), vec3(0.01f)),HouseModelIndex,0,0 });
 
     app->entities.push_back({ TransformPositionScale(vec3(0.0, -3.0, 0.0), vec3(1.0, 1.0, 1.0)), GroundModelIndex, 0, 0 });
 
 
     //LIGHTS
-
-   //app->entities.push_back({ TransformPositionScale(vec3(1.0f,2.0f,3.0f), vec3(0.1f)),SphereLightIndex,0,0 });
-   //app->entities.push_back({ TransformPositionScale(vec3(1.0,-1.0,1.0), vec3(0.1f)),SquereLightIndex,0,0 });
-   //
-   //app->lights.push_back({ LightType::LightType_Directional,vec3(1.0,1.0,1.0),vec3(1.0,-1.0,1.0),vec3(1.0,0.0,0.0) });
-   //app->lights.push_back({ LightType::LightType_Point,vec3(0.0,1.0,0.0),vec3(1.0,2.0,3.0),vec3(0.0,1.0,1.0) });
-
     app->CreatePointLight(SphereLightIndex, vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0, 1.0, 3.0));
-    app->CreateDirectionalLight(SquereLightIndex, vec3(1.0, 1.0, 1.0), vec3(0.0, 1.0, 1.0), vec3(1.0, 0.0, 0.0));
+    app->CreatePointLight(SphereLightIndex, vec3(1.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(1.0, 1.0, -3.0));
+    app->CreatePointLight(SphereLightIndex, vec3(0.0, 0.0, 1.0), vec3(1.0, 1.0, 1.0), vec3(0.0, 5.0, 0.0));
+    app->CreatePointLight(SphereLightIndex, vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 1.0), vec3(0.0, -3.0, 0.0));
+    app->CreatePointLight(SphereLightIndex, vec3(0.0, 0.0, 1.0), vec3(1.0, 1.0, 1.0), vec3(2.0, 1.0, 8.0f));
+
+
+    app->CreateDirectionalLight(SquereLightIndex, vec3(1.0, 1.0, 1.0), vec3(1.0, 1.0, 1.0), vec3(5.0, 0.0, 0.0));
+    app->CreateDirectionalLight(SquereLightIndex, vec3(1.0, 0.0, 0.0), vec3(-1.0, 1.0, 1.0), vec3(-5.0, 0.0, 0.0));
+
+
 
     app->ConfigureFrameBuffer(app->defferredFrameBuffer);
 
@@ -360,13 +364,20 @@ void Gui(App* app)
         }
         ImGui::EndCombo();
     }
+
     if (app->mode == Mode::Mode_Deferred)
     {
+        // Render color attachments
         for (size_t i = 0; i < app->defferredFrameBuffer.ColorAttachment.size(); i++)
         {
             ImGui::Image((ImTextureID)app->defferredFrameBuffer.ColorAttachment[i], ImVec2(250, 150), ImVec2(0, 1), ImVec2(1, 0));
         }
+
+        // Render depth attachment
+        ImGui::Text("Depth Buffer");
+        ImGui::Image((ImTextureID)app->defferredFrameBuffer.depthHandle, ImVec2(250, 150), ImVec2(0, 1), ImVec2(1, 0));
     }
+
     ImGui::End();
 }
 
@@ -379,16 +390,14 @@ void App::CreatePointLight(u32 GeometryIndex, vec3 color, vec3 direction, vec3 p
 {
     lights.push_back({ LightType::LightType_Point, color, direction, position});
     entities.push_back({ TransformPositionScale(position, vec3(0.1f)),GeometryIndex, 0, 0});
-    
-    //app->entities.push_back({ TransformPositionScale(vec3(1.0,-1.0,1.0), vec3(0.1f)),SquereLightIndex,0,0 });
+
+    //lights[lights.size() - 1] = entities.size() - 1;
 }
 
 void App::CreateDirectionalLight(u32 GeometryIndex, vec3 color, vec3 direction, vec3 position)
 {
     lights.push_back({ LightType::LightType_Directional, color, direction, position });
     entities.push_back({ TransformPositionScale(position, vec3(0.1f)),GeometryIndex, 0, 0 });
-
-    //app->entities.push_back({ TransformPositionScale(vec3(1.0,-1.0,1.0), vec3(0.1f)),SquereLightIndex,0,0 });
 }
 
 glm::mat4 TransformScale(const vec3& scaleFactors)
